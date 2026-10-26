@@ -1,108 +1,163 @@
-from typing import Callable, TypedDict
+
+from typing import TypedDict, Callable, Iterable
 
 
-class Transaction(TypedDict):
+class Athlete(TypedDict):
     id: int
-    type: str
-    amount: float
-    currency: str
+    name: str
+    attempts: list[float]
     status: str
+    category: str
 
 
-class ProcessedTransaction(TypedDict):
-    id: int
-    type: str
-    amount: float
-    currency: str
-    status: str
-    converted_amount: float
-    final_amount: float
+class AthleteResult(Athlete, total=False):
+    average_result: float
+    bonus: float
+    penalty: float
+    final_result: float
+    qualified: bool
 
 
-RateFn = Callable[[str], float]
-CommissionFn = Callable[[float], float]
-FilterFn = Callable[[float], bool]
+# Типи функцій для передачі політик
+AggregationFn = Callable[[list[float]], float]
+BonusFn = Callable[[str], float]
+PenaltyFn = Callable[[Athlete], float]
+QualificationFn = Callable[[float, str], bool]
 
 
-def is_successful(transaction: Transaction) -> bool:
-    return transaction["status"] == "successful"
+# 1. Обчислення середнього результату спроб
+def calculate_average(attempts: list[float]) -> float:
+    if not attempts:
+        return 0.0
+
+    return sum(attempts) / len(attempts)
 
 
-def convert_amount(
-    amount: float,
-    currency: str,
-    get_rate: RateFn
-) -> float:
-    return amount * get_rate(currency)
+# 2. Отримання бонусу залежно від категорії
+def calculate_bonus(category: str) -> float:
+    bonuses = {
+        "junior": 5.0,
+        "senior": 10.0,
+        "professional": 15.0
+    }
+
+    return bonuses.get(category, 0.0)
 
 
-def apply_commission(
-    amount: float,
-    commission: CommissionFn
-) -> float:
-    return commission(amount)
+# 3. Обчислення штрафу залежно від кількості спроб
+def calculate_penalty(athlete: Athlete) -> float:
+    attempts_count = len(athlete["attempts"])
+
+    if attempts_count > 5:
+        return 5.0
+
+    if attempts_count == 0:
+        return 10.0
+
+    return 0.0
 
 
-def with_processed_amount(
-    transaction: Transaction,
-    converted_amount: float,
-    final_amount: float
-) -> ProcessedTransaction:
+# 4. Перевірка кваліфікації спортсмена
+def check_qualification(
+    final_result: float,
+    category: str
+) -> bool:
+    minimum_results = {
+        "junior": 30.0,
+        "senior": 50.0,
+        "professional": 70.0
+    }
+
+    minimum = minimum_results.get(category, 50.0)
+
+    return final_result >= minimum
+
+
+# 5. Створення нового запису з результатами
+def create_result(
+    athlete: Athlete,
+    average: float,
+    bonus: float,
+    penalty: float,
+    final_result: float,
+    qualified: bool
+) -> AthleteResult:
+
     return {
-        **transaction,
-        "converted_amount": converted_amount,
-        "final_amount": final_amount
+        **athlete,
+        "attempts": list(athlete["attempts"]),
+        "average_result": average,
+        "bonus": bonus,
+        "penalty": penalty,
+        "final_result": final_result,
+        "qualified": qualified
     }
 
 
+# 6. Функція вищого порядку — фабрика обробника
 def make_processor(
     *,
-    get_rate: RateFn,
-    commission: CommissionFn,
-    accept: FilterFn
-) -> Callable[[list[Transaction]], dict[str, object]]:
+    aggregate: AggregationFn,
+    apply_bonus: BonusFn,
+    apply_penalty: PenaltyFn,
+    qualify: QualificationFn
+) -> Callable[[Iterable[Athlete]], dict[str, object]]:
 
     def process(
-        transactions: list[Transaction]
+        athletes: Iterable[Athlete]
     ) -> dict[str, object]:
 
-        processed = []
-        total = 0.0
+        results = []
 
-        for transaction in transactions:
+        for athlete in athletes:
 
-            if not is_successful(transaction):
+            # Обробляємо тільки завершені виступи
+            if athlete["status"] != "completed":
                 continue
 
-            amount = transaction["amount"]
+            average = aggregate(athlete["attempts"])
 
-            if not accept(amount):
-                continue
+            bonus = apply_bonus(athlete["category"])
 
-            converted_amount = convert_amount(
-                amount,
-                transaction["currency"],
-                get_rate
+            penalty = apply_penalty(athlete)
+
+            final_result = average + bonus - penalty
+
+            qualified = qualify(
+                final_result,
+                athlete["category"]
             )
 
-            final_amount = apply_commission(
-                converted_amount,
-                commission
+            new_athlete = create_result(
+                athlete,
+                average,
+                bonus,
+                penalty,
+                final_result,
+                qualified
             )
 
-            new_transaction = with_processed_amount(
-                transaction,
-                converted_amount,
-                final_amount
-            )
+            results.append(new_athlete)
 
-            processed.append(new_transaction)
-            total += final_amount
+        qualified_count = sum(
+            1 for athlete in results if athlete["qualified"]
+        )
 
         return {
-            "count": len(processed),
-            "total": total,
-            "transactions": processed
+            "count": len(results),
+            "qualified_count": qualified_count,
+            "not_qualified_count": len(results) - qualified_count,
+            "results": results
         }
 
     return process
+
+
+# 7. Створення стандартного обробника
+def create_default_processor() -> Callable:
+    return make_processor(
+        aggregate=calculate_average,
+        apply_bonus=calculate_bonus,
+        apply_penalty=calculate_penalty,
+        qualify=check_qualification
+    )

@@ -1,73 +1,85 @@
-from core import make_processor
+
+from core import create_default_processor
 
 
-def get_rate(currency: str) -> float:
-    rates = {
-        "USD": 41.0,
-        "EUR": 48.0,
-        "UAH": 1.0
-    }
-
-    return rates.get(currency, 1.0)
-
-
-def commission(amount: float) -> float:
-    return amount * 0.98
-
-
-def accept(amount: float) -> bool:
-    return amount >= 50
-
-
-processor = make_processor(
-    get_rate=get_rate,
-    commission=commission,
-    accept=accept
-)
-
-
-transactions = [
+# Демонстраційні дані спортсменів
+athletes = [
     {
         "id": 1,
-        "type": "payment",
-        "amount": 100,
-        "currency": "USD",
-        "status": "successful"
+        "name": "Олександр",
+        "attempts": [65.0, 70.0, 75.0],
+        "status": "completed",
+        "category": "professional"
     },
     {
         "id": 2,
-        "type": "transfer",
-        "amount": 30,
-        "currency": "EUR",
-        "status": "successful"
+        "name": "Марія",
+        "attempts": [40.0, 45.0, 50.0],
+        "status": "completed",
+        "category": "senior"
     },
     {
         "id": 3,
-        "type": "payment",
-        "amount": 200,
-        "currency": "USD",
-        "status": "failed"
+        "name": "Андрій",
+        "attempts": [25.0, 30.0, 35.0],
+        "status": "completed",
+        "category": "junior"
     },
     {
         "id": 4,
-        "type": "payment",
-        "amount": 150,
-        "currency": "EUR",
-        "status": "successful"
+        "name": "Софія",
+        "attempts": [80.0, 85.0],
+        "status": "disqualified",
+        "category": "professional"
+    },
+    {
+        "id": 5,
+        "name": "Дмитро",
+        "attempts": [35.0, 40.0, 45.0],
+        "status": "completed",
+        "category": "junior"
     }
 ]
 
 
-result = processor(transactions)
+# Функція виведення звіту
+def render_report(result: dict[str, object]) -> None:
+    print("\n" + "=" * 55)
+    print("          РЕЗУЛЬТАТИ СПОРТИВНИХ ЗМАГАНЬ")
+    print("=" * 55)
+
+    print(f"\nОброблено спортсменів: {result['count']}")
+    print(f"Кваліфіковано: {result['qualified_count']}")
+    print(f"Не кваліфіковано: {result['not_qualified_count']}")
+
+    print("\nДетальні результати:")
+    print("-" * 55)
+
+    for athlete in result["results"]:
+        print(f"\nID: {athlete['id']}")
+        print(f"Ім'я: {athlete['name']}")
+        print(f"Категорія: {athlete['category']}")
+        print(f"Спроби: {athlete['attempts']}")
+        print(f"Середній результат: {athlete['average_result']:.2f}")
+        print(f"Бонус: +{athlete['bonus']:.2f}")
+        print(f"Штраф: -{athlete['penalty']:.2f}")
+        print(f"Підсумковий результат: {athlete['final_result']:.2f}")
+
+        if athlete["qualified"]:
+            print("Кваліфікація: ПРОЙШОВ")
+        else:
+            print("Кваліфікація: НЕ ПРОЙШОВ")
+
+    print("\n" + "=" * 55)
 
 
-for transaction in result["transactions"]:
-    print(
-        "Transaction:",
-        transaction["id"],
-        "final amount:",
-        transaction["final_amount"]
-    )
+def main() -> None:
+    processor = create_default_processor()
 
-print("Count:", result["count"])
-print("Total:", result["total"])
+    result = processor(athletes)
+
+    render_report(result)
+
+
+if __name__ == "__main__":
+    main()
