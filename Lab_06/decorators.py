@@ -6,10 +6,23 @@ import random
 import threading
 import time
 from collections.abc import Callable
-from typing import Any, Hashable, ParamSpec, TypeVar, Literal
+from typing import Any, Hashable, Literal, ParamSpec, Protocol, TypeVar, cast
 
 P = ParamSpec("P")
 R = TypeVar("R")
+R_co = TypeVar("R_co", covariant=True)
+
+
+class CachedFunction(Protocol[P, R_co]):
+    """Callable returned by ``cached``, including its cache controls."""
+
+    def __call__(self, *args: P.args, **kwargs: P.kwargs) -> R_co: ...
+
+    def cache_clear(self) -> None: ...
+
+    def cache_invalidate(
+        self, predicate: Callable[[tuple[Any, ...], dict[str, Any]], bool]
+    ) -> int: ...
 
 
 def timed(
@@ -82,7 +95,9 @@ def retries(
 def make_key(args: tuple[Any, ...], kwargs: dict[str, Any]) -> Hashable:
     """Формує ключ кешу; аргументи мають бути хешованими."""
     try:
-        return args, tuple(sorted(kwargs.items()))
+        key = (args, tuple(sorted(kwargs.items())))
+        hash(key)
+        return key
     except TypeError as error:
         raise TypeError("Аргументи функції мають бути хешованими.") from error
 
@@ -91,31 +106,31 @@ def cached(
     *,
     ttl: float | None = None,
     time_fn: Callable[[], float] = time.time,
-) -> Callable[[Callable[P, R]], Callable[P, R]]:
+) -> Callable[[Callable[P, R]], CachedFunction[P, R]]:
     """Кешує результати з необов'язковим TTL та інвалідацією записів."""
     if ttl is not None and ttl < 0:
         raise ValueError("ttl не може бути від'ємним.")
 
-    def decorator(func: Callable[P, R]) -> Callable[P, R]:
+    def decorator(func: Callable[P, R]) -> CachedFunction[P, R]:
         cache: dict[Hashable, tuple[float | None, R]] = {}
-        lock = threading.Lock()
+        # Lock the computation too, so simultaneous misses share one result.
+        lock = threading.RLock()
 
         @functools.wraps(func)
         def wrapper(*args: P.args, **kwargs: P.kwargs) -> R:
             key = make_key(args, kwargs)
-            now = time_fn()
             with lock:
+                now = time_fn()
                 entry = cache.get(key)
                 if entry is not None:
                     expires_at, value = entry
                     if expires_at is None or now < expires_at:
                         return value
                     del cache[key]
-            value = func(*args, **kwargs)
-            with lock:
+                value = func(*args, **kwargs)
                 expires_at = None if ttl is None else time_fn() + ttl
                 cache[key] = (expires_at, value)
-            return value
+                return value
 
         def cache_clear() -> None:
             with lock:
@@ -135,5 +150,5 @@ def cached(
 
         setattr(wrapper, "cache_clear", cache_clear)
         setattr(wrapper, "cache_invalidate", cache_invalidate)
-        return wrapper
+        return cast(CachedFunction[P, R], wrapper)
     return decorator

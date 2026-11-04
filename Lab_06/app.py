@@ -23,7 +23,9 @@ def build_service(order: str = "cache_outer"):
         attempts=3, delay=0.1, backoff=2.0, jitter=0.0,
         sleep=lambda _seconds: None, logger=logger,
     )(unstable_fetch)
-    timed_retry = timed("service", unit="ms", logger=logger, clock=_fake_clock())(retry_layer)
+    timed_retry = timed(
+        "service", unit="ms", logger=logger, clock=_fake_clock()
+    )(retry_layer)
 
     if order == "cache_outer":
         service = cached(ttl=30.0)(timed_retry)

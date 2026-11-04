@@ -2,7 +2,9 @@
 from collections.abc import Callable
 
 
-def make_logger(prefix: str, sink: Callable[[str], None] = print) -> Callable[[str], None]:
+def make_logger(
+    prefix: str, sink: Callable[[str], None] = print
+) -> Callable[[str], None]:
     """Створює логер, який зберігає префікс у замиканні."""
     def log(message: str) -> None:
         sink(f"[{prefix}] {message}")
