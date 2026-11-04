@@ -1,0 +1,24 @@
+=== Лабораторна робота 6 — варіант 15 ===
+
+Порядок: cache_outer
+Перший виклик: {'user_id': 7, 'name': 'User 7'}
+Повторний виклик: {'user_id': 7, 'name': 'User 7'}
+Кількість звернень до сервісної функції: 3
+Лог:
+  [SERVICE] [retries] attempt 1 failed; wait 0.100s
+  [SERVICE] [retries] attempt 2 failed; wait 0.200s
+  [SERVICE] [timed] service took 1.000 ms
+Очищення кешу та повторний виклик:
+{'user_id': 7, 'name': 'User 7'}
+
+Порядок: retry_outer
+Перший виклик: {'user_id': 7, 'name': 'User 7'}
+Повторний виклик: {'user_id': 7, 'name': 'User 7'}
+Кількість звернень до сервісної функції: 3
+Лог:
+  [SERVICE] [retries] attempt 1 failed; wait 0.100s
+  [SERVICE] [retries] attempt 2 failed; wait 0.200s
+  [SERVICE] [timed] service took 1.000 ms
+  [SERVICE] [timed] service took 1.000 ms
+Очищення кешу та повторний виклик:
+{'user_id': 7, 'name': 'User 7'}

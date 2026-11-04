@@ -1,0 +1,4 @@
+Запит: (city == 'Lviv' AND (active == True AND (NOT (age == 20 OR age == 22))))
+
+Результати фільтрації:
+- Sofiia: {'name': 'Sofiia', 'age': 19, 'city': 'Lviv', 'active': True}
