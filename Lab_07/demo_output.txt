@@ -1,0 +1,12 @@
+Лабораторна робота №7 — варіант 15
+Top-3 зданих лабораторних робіт:
+1. Maria Shevchenko: 96.0 балів; спроб: 2; лабораторна №1
+2. Oleksandr Kovalenko: 92.0 балів; спроб: 1; лабораторна №1
+3. Sofia Bondar: 90.0 балів; спроб: 3; лабораторна №3
+
+Завантаження CSV через singledispatch:
+Кількість записів: 7
+
+Порівняння об'єктів LabResult:
+[LabResult(student='Bob', lab=1, score=93.0, attempts=1), LabResult(student='Carol', lab=1, score=93.0, attempts=2), LabResult(student='Alice', lab=1, score=87.0, attempts=2)]
+Найкращий результат: LabResult(student='Bob', lab=1, score=93.0, attempts=1)

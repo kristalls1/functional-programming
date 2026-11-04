@@ -1,0 +1,1 @@
+pytest>=7.0\nmypy>=1.8\n

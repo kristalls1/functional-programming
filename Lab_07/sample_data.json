@@ -1,0 +1,51 @@
+[
+  {
+    "student": "  oleksandr kovalenko ",
+    "lab": "1",
+    "score": "92",
+    "attempts": "1",
+    "submitted": "true"
+  },
+  {
+    "student": "maria shevchenko",
+    "lab": "1",
+    "score": "96.5",
+    "attempts": "2",
+    "submitted": true
+  },
+  {
+    "student": "ivan petrenko",
+    "lab": "2",
+    "score": "88",
+    "attempts": "1",
+    "submitted": "yes"
+  },
+  {
+    "student": "anna melnyk",
+    "lab": "2",
+    "score": "100",
+    "attempts": "1",
+    "submitted": false
+  },
+  {
+    "student": "sofia bondar",
+    "lab": "3",
+    "score": "91",
+    "attempts": "3",
+    "submitted": "true"
+  },
+  {
+    "student": "danylo kravets",
+    "lab": "3",
+    "score": "84.5",
+    "attempts": "1",
+    "submitted": "true"
+  },
+  {
+    "student": "olena tkach",
+    "lab": "4",
+    "score": "79",
+    "attempts": "2",
+    "submitted": "false"
+  }
+]
